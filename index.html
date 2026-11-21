@@ -1,5 +1,5 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
-<title>Field Beta 4D Model</title>
+<title>Field Beta Well-Data 4D Model</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -139,11 +139,12 @@ ul.clean{margin:4px 0; padding-left:18px} ul.clean li{margin:2px 0}
 <div class="wrap">
   <header class="top">
     <div>
-      <h1>Field Beta 4D Model</h1>
-      <p class="sub">Gas depletion, water influx and compaction in the Field Beta reservoir. One rock-physics engine (Batzle–Wang, Gassmann, stress-sensitive frame) feeds full- and angle-stack synthetics, time shifts, noise, depth and net-to-gross analyses.</p>
+      <h1>Field Beta 4D Model · Well Data</h1>
+      <p class="sub">Gas depletion, water influx and compaction in the Field Beta reservoir, calibrated to the final well reports of wells Da, Db and Dc. One rock-physics engine (Batzle–Wang, Gassmann, stress-sensitive frame) feeds full- and angle-stack synthetics, time shifts, noise, depth and net-to-gross analyses.</p>
     </div>
     <div class="toolbar">
-      <button id="preSap" class="on" title="Reset every input to the Field Beta analog priors">Field Beta preset</button>
+      <select id="wellSel" aria-label="Well data preset" style="width:auto"><option value="Da">Well Da · Upper S40</option><option value="DaL">Well Da · Lower S40</option><option value="Db">Well Db · S40</option><option value="Dc">Well Dc · Upper S40</option><option value="Avg">Area average</option></select>
+      <button id="preSap" class="on" title="Load the selected well's real data into every input">Load well data</button>
       <input type="text" id="scenName" placeholder="Scenario name" style="width:130px" aria-label="Scenario name">
       <button id="scenSave">Save</button>
       <select id="scenList" aria-label="Saved scenarios" style="width:150px"></select>
@@ -152,7 +153,7 @@ ul.clean{margin:4px 0; padding-left:18px} ul.clean li{margin:2px 0}
       <select id="theme" aria-label="Theme" style="width:auto"><option value="system">System theme</option><option value="light">Light</option><option value="dark">Dark</option></select>
     </div>
   </header>
-  <div class="banner"><b>Field Beta defaults are analog priors.</b> Replace them with well logs, PVT, RFT/MDT pressures and the well-tied wavelet. The interpretation deck's caveats still apply: its maps were read by eye, and the measured time shift is contaminated by the shallow producer.</div>
+  <div class="banner"><b>Inputs come from the final well reports of Da, Db and Dc</b> where a value was reported (badge M), derived or analog where it was not (A), and assumed where the reports are silent (S). Pressure histories, first-gas dates and water timing come from the production reviews; sonic velocities and frame stiffening are still estimated. See Assumptions &amp; audit › Well data. The interpretation deck's caveats still apply: its maps were read by eye, and the measured time shift is contaminated by the shallow producer.</div>
   <div id="warn"></div>
   <nav class="tabs" id="tabs" aria-label="Analysis tabs"></nav>
   <div class="grid">
@@ -307,13 +308,14 @@ var SCHEMA = [
  P_("anchor","depth","Anchor trends to Field Beta inputs","",true,true,null,null,null,null,null,"S","","Scales the trends so the Depth tab reproduces the core model at the Field Beta depth.",{type:"chk"}),
  P_("coordN","depth","Coordination number","",8,8,4,12,0.5,null,null,"A","Friable-sand model",""),
  P_("slip","depth","Shear slip factor","",0.6,0.6,0,1,0.05,null,null,"A","Reduces Hertz–Mindlin μ",""),
- P_("shGrad","depth","Shale Vp gradient","m/s per km",450,450,0,1500,10,null,null,"A","",""),
- P_("bgMode","depth","Background shale","","fixed","fixed",null,null,null,null,null,"S","","Fixed at Field Beta values, or following its own trend.",SEL([["fixed","Non-changing (fixed)"],["trend","Co-varying trend"]])),
- P_("Qeff","depth","Effective Q (overburden)","",120,120,10,1000,5,60,200,"A","",""),
- P_("zMin","depth","Depth range min","ft TVDSS",4000,4000,1000,20000,100,null,null,"S","",""),
- P_("zMax","depth","Depth range max","ft TVDSS",12000,12000,2000,30000,100,null,null,"S","",""),
- P_("intVel","depth","Interval velocity for ms → depth","m/s",2350,2350,1500,5000,10,null,null,"A","","Converts the deck's +30…+84 ms levels to depth."),
- P_("fadeObs","depth","Observed signal at +84 ms","fraction of Field Beta",0.15,0.15,0,1,0.01,null,null,"S","Deck, read by eye","Used to say how much of the fading rock physics explains."),
+ P_("zScen","depth","Scenario reservoir depths","m TVDSS","2000 3000 4000 5000","2000 3000 4000 5000",null,null,null,null,null,"S","What-if burial depths","Real reservoir depths to compare with Field Beta, separated by spaces (1–8 values, 800–7000 m, below the seabed).",{type:"txt"}),
+ P_("depPath","depth","Depletion at each depth","","same","same",null,null,null,null,null,"S","","Same absolute drawdown as Field Beta (including the measured P–year table), or the same fraction of the initial pressure. Pressure is clamped at 300 psia.",SEL([["same","Same ΔP as Field Beta"],["frac","Same fraction of Pi"]])),
+ P_("bgMode","depth","Background shale","","fixed","fixed",null,null,null,null,null,"S","","Shale Vp, Vs and ρ held at the Field Beta overburden values at every depth, or a slight Vp trend (gradient below).",SEL([["fixed","Fixed (Field Beta shale)"],["trend","Slight shale trend"]])),
+ P_("shGradM","depth","Shale Vp gradient (slight trend)","m/s per km",150,150,0,600,10,null,null,"A","","Used only when the background shale is set to the slight trend."),
+ P_("attenOn","depth","Wavelet change with depth (constant Q)","",false,false,null,null,null,null,null,"S","","Off: every depth uses the Field Beta wavelet, so the comparison shows rock physics only.",{type:"chk"}),
+ P_("Qeff","depth","Effective Q (overburden, if on)","",120,120,10,1000,5,60,200,"A","",""),
+ P_("zMinM","depth","Depth curves from","m TVDSS",1500,1500,500,7000,50,null,null,"S","","Start of the continuous depth curves."),
+ P_("zMaxM","depth","Depth curves to","m TVDSS",5500,5500,800,8000,50,null,null,"S","","End of the continuous depth curves."),
  // ---- ntg
  P_("ntgA","ntg","Location A NTG (channel axis)","frac",0.85,0.85,0,1,0.01,null,null,"S","",""),
  P_("ntgB","ntg","Location B NTG (margin)","frac",0.40,0.40,0,1,0.01,null,null,"S","",""),
@@ -341,6 +343,156 @@ var SCHEMA = [
 var SCHEMA_BY = {}; SCHEMA.forEach(s => SCHEMA_BY[s.id] = s);
 function defaults(which){ const o = {}; SCHEMA.forEach(s => o[s.id] = which==="gen" ? s.gen : s.sap); return o; }
 if (false) module.exports = {SCHEMA, GROUPS, defaults};
+
+/* ===== Real well data (final well reports) =====
+   Each entry: [value, confidence, basis]. M = measured in the report, A = analog / derived, S = assumed. */
+var WELL_SOURCES = "Da FWR (Oct 2013), Db FWR (2019), Dc FWR draft (Jan 2020), spectral-decomposition deck V2.0";
+var WELLS = {
+ Da: { label:"Well Da · Upper S40 (2013, virgin MDT)", v:{
+  prodStart:[2015,"S","Da suspended Oct 2013 for later completion; first gas assumed 2015"],
+  baseYear:[2006,"M","4D base survey; the compartment was still virgin when Da was drilled in 2013"],
+  monYear:[2025,"M","4D monitor survey"],
+  Pi:[4672,"M","Da MDT: 4671.1 psia at −2809.4 m TVDSS (9.7 ppg EMW), corrected to mid Upper S40 with the 0.104 psi/ft gas gradient"],
+  Tres:[179.4,"M","Da FWR applied reservoir temperature (Horner BHT 188.7 °F; MDT 175–181 °F)"],
+  Gg:[0.656,"M","Da PVT samples at 2865 m and 2899 m MD: SG 0.657 and 0.655"],
+  Sg:[0.71,"M","1 − Sw (Da CMR pay, Upper S40)"],
+  Sw:[0.29,"M","Da CMR/density pay average, Upper S40 (irreducible)"],
+  Sc:[0,"M","Single-phase gas in the reservoir; CGR only 19–29 bbl/MMscf (GLR 52,817 and 34,241 scf/bbl)"],
+  sal:[31600,"A","From Rw 0.254 Ω·m at 60 °F (offset well 4 MDT water sample) → ≈31,600 ppm NaCl"],
+  condRho:[780,"M","Da condensate density 0.78 g/cc"],
+  Vp0:[2250,"A","Not in the FWR text (DSI logged). Estimated from φ, Vcl, σ′ and analog gas sands; replace with Da DTCO"],
+  Vs0:[1300,"A","Not in the FWR text (DSI logged). Estimated, Vp/Vs ≈ 1.73; replace with Da DTSM"],
+  phi:[0.24,"M","Da CMR/density, Upper S40 net reservoir (ELAN 0.226)"],
+  Vclay:[0.23,"M","Da CMR clay volume, Upper S40 net pay"],
+  Rqz:[2650,"M","Da ELAN matrix density 2.65 g/cc"],
+  wd:[1829,"M","Da MSL–seabed 557.5 m"],
+  depth:[9228,"M","Da Upper S40 −2804.1 to −2821.5 m TVDSS; mid 2812.8 m"],
+  obRho:[2300,"M","Da ELAN shale density 2.3 g/cc"],
+  obVp:[2550,"A","Estimated for Kafr El Sheikh claystone at 2.8 km (Gardner-consistent with 2.3 g/cc)"],
+  obVs:[1030,"A","Castagna mudrock line from shale Vp"],
+  resThk:[17,"M","Da Upper S40 gross 17 m MD (17.4 m TVD)"],
+  NTG:[0.77,"M","Da net pay / gross, Upper S40 (ELAN 0.78, CMR 0.76)"],
+  nBeds:[3,"A","Channel sands with laminated beds (Da CMR discussion)"],
+  dPtot:[3000,"S","No production pressure in the reports; assumed drawdown towards ~1,700 psia"],
+  tau:[8,"S","Assumed decline time"],
+  wArrive:[2023,"S","Assumed; FWL at −2862 m TVDSS, 58 m below the top of Upper S40"],
+  wBT:[2027,"S","Assumed; set from Da water-cut history"],
+  wLate:[2033,"S","Assumed"],
+  spDepth:[5545,"A","Shallow depleted reservoir ~1000 m above S40 (Da PP/FG plot: top ≈1650 m, base ≈1790 m TVD RT)"],
+  spThk:[30,"S","Shallow-reservoir net sand assumed (gross interval ≈140 m on the Da PP/FG plot)"],
+  spStart:[2003,"A","Shallow reservoir on stream 2003 (public record); already depleted at Da spud"],
+  tSea:[13.9,"M","Seabed temperature 57 °F (Db, Dc FWRs)"],
+  tGrad:[30,"M","Da: 57 °F at seabed to 179.4 °F at 2813 m TVDSS → 0.054 °F/m ≈ 30 °C/km"],
+  ppGrad:[0.506,"M","Da MDT 9.7 ppg EMW"],
+  thrMax:[3,"S","Calibrated so R_SH falls in the 1/3–2/3 field band with the measured Da pressure and water history"],
+  thrDP:[2300,"S","Calibrated onset (Da drawdown reached 3022 psi in Apr 2020)"],
+  thrW:[100,"S","Calibrated transition width"]
+ }},
+ Db: { label:"Well Db · S40 north of NDOA (2019, LWD)", v:{
+  prodStart:[2019.5,"S","Db drilled Sep 2018 – Mar 2019; first gas assumed mid-2019"],
+  Pi:[4320,"A","No pressure test in Db (LWD only). Estimated from Dc GeoTap (4364 psia at −2740 m) with the 0.125 psi/ft gas gradient"],
+  Tres:[172.5,"A","From the offset well 4 temperature used in the Db FWR and the Da gradient (0.054 °F/m)"],
+  Gg:[0.656,"A","No Db sample; Da PVT gravity used (same S40 gas)"],
+  Sg:[0.77,"M","1 − Sw"], Sw:[0.23,"M","Db LWD: S40 sands Sw 0.29 and 0.21 (net-weighted 0.23)"],
+  phi:[0.245,"M","Db LWD PHIE 0.23 and 0.25 (net-weighted)"], Vclay:[0.185,"M","Db LWD Vsh 0.20 and 0.18"],
+  wd:[1703,"M","Db MSL–seabed 519 m"], depth:[8619,"M","Db top S40 −2608.1 m TVDSS; main sand mid ≈ −2627 m"],
+  resThk:[24,"M","Db S40 interval 2622.4–2646.5 m TVD (two sands with a 7 m shale)"],
+  NTG:[0.53,"M","Db net 12.85 m in 24 m gross (main sands N/G 0.91–0.94)"], nBeds:[2,"M","Two S40 sands separated by 7 m of shale"],
+  Vp0:[2230,"A","Estimated (no sonic in Db)"], Vs0:[1290,"A","Estimated (no sonic in Db)"],
+  wArrive:[2026,"S","Assumed"], wBT:[2030,"S","Assumed"], wLate:[2036,"S","Assumed"],
+  spDepth:[5410,"A","Shallow depleted reservoir ≈1000 m above S40"],
+  ppGrad:[0.501,"A","From the estimated Pi"], dPtot:[2800,"S","Assumed"]
+ }},
+ Dc: { label:"Well Dc · Upper S40 (Dec 2019, GeoTap)", v:{
+  prodStart:[2020.5,"S","Dc drilled Nov–Dec 2019; first gas assumed mid-2020"],
+  Pi:[4364,"M","Dc GeoTap: 4364 psia at −2740 m TVDSS (Upper S40 top); ~300 psi below the Da regime"],
+  Tres:[167,"M","Dc FWR applied reservoir temperature (0.048 °F/m from 57 °F seabed)"],
+  Gg:[0.656,"A","No Dc sample; Da PVT gravity used"],
+  Sg:[0.773,"M","1 − Sw"], Sw:[0.227,"M","Dc LWD Upper S40 pay"],
+  phi:[0.234,"M","Dc LWD Upper S40 (from Vsh–PHIE transform of Da and Db)"], Vclay:[0.262,"M","Dc LWD Upper S40 Vsh"],
+  wd:[1600,"M","Dc water depth 487.8 m"], depth:[8990,"M","Dc top Upper S40 −2738 m TVDSS; mid ≈ −2740 to −2762 m"],
+  resThk:[22,"M","Dc Upper S40 gross 22 m MD (2852–2874 m)"], NTG:[0.816,"M","Dc Upper S40 N/G"], nBeds:[3,"A","Assumed"],
+  Vp0:[2260,"A","Estimated (no sonic in Dc)"], Vs0:[1300,"A","Estimated (no sonic in Dc)"],
+  wArrive:[2026,"S","Assumed; Lower S40 is water-bearing (Sw 0.9) and the water gradient is 0.47 psi/ft"], wBT:[2030,"S","Assumed"], wLate:[2036,"S","Assumed"],
+  spDepth:[5300,"A","Shallow depleted reservoir ≈1000 m above S40"],
+  ppGrad:[0.485,"M","Dc GeoTap pressure / depth"], tGrad:[34,"M","Dc FWR 0.048 °F/m"], dPtot:[2800,"S","Assumed"]
+ }}
+};
+// Area average (simple mean of the three wells where each has a value)
+
+/* ===== Production data: area dynamic review and East Area well reviews (production pressures digitised from the
+   "SIP at datum (−2711.3 m TVDSS) vs time" and "reservoir pressure vs cumulative production" plots) ===== */
+WELL_SOURCES += "; area dynamic overview (2026) and East Area well reviews (production, SIP, P/Z, simulation)";
+const PROD = {
+ Da: {
+  prodStart:[2014.65,"M","First gas 26 Aug 2014 at 75 MMscfd (production review)"],
+  decl:["table","M","Measured shut-in pressures (digitised); see P–year table"],
+  pTable:["2014.65 4672\n2015.5 3850\n2016.5 3350\n2017.5 2850\n2018.5 2300\n2019.8 1850\n2020.0 1770\n2020.3 1650\n2021.3 2500\n2021.8 2680\n2023.3 2300\n2025.0 2400\n2035 2400","A","Upper S40 SIP: 4672 virgin (MDT); 1850 Oct-19, 1770 Jan-20, 1650 Apr-20, 2500 Apr-21, 2680 Oct-21 (plot); 2015–18 from P vs cum; 2023–25 estimated after shut-in with cross-flow"],
+  support:[0,"M","Not needed: the measured pressures already include aquifer support and cross-flow"],
+  wArrive:[2019,"A","Simulation Case 1 Sw maps: water reaches the Upper S40 at Da between 2019 and 2021"],
+  wBT:[2023.3,"A","Apr 2023: well shut in and could not flow again because of severe cross-flow from the watered Lower S40"],
+  wLate:[2025,"A","Simulation Case 1: Da location swept (Sw ≈ 0.7) by 2025; gas left only updip to the west"],
+  Sgr:[0.30,"A","Swept Sw ≈ 0.7 in the simulation maps"],
+  dPtot:[3022,"M","Maximum measured drawdown (4672 → 1650 psia, Apr 2020); used only by the exp/hyp decline"]
+ },
+ DaL: {
+  prodStart:[2014.65,"M","First gas 26 Aug 2014 (both zones)"],
+  Pi:[4685,"M","Da MDT 4685.45 psia at −2851.0 m TVDSS (Lower S40)"],
+  Tres:[181,"M","Da MDT temperature at the Lower S40 (180.7–182.3 °F)"],
+  depth:[9337,"M","Da Lower S40 −2840.3 to −2851.9 m TVDSS; mid 2846 m"],
+  phi:[0.232,"M","Da CMR/density, Lower S40"], Vclay:[0.176,"M","Da CMR clay volume, Lower S40"],
+  Sw:[0.31,"M","Da CMR pay, Lower S40"], Sg:[0.69,"M","1 − Sw"],
+  resThk:[12,"M","Da Lower S40 gross 13 m MD (11.6 m TVD)"], NTG:[0.84,"M","Da CMR net/gross, Lower S40"],
+  decl:["table","M","Measured shut-in pressures (digitised)"],
+  pTable:["2014.65 4685\n2015.5 4000\n2016.5 3550\n2017.5 3100\n2018.5 2800\n2019.8 2600\n2020.0 2550\n2020.3 2740\n2021.3 2630\n2021.8 2640\n2023.3 2600\n2025.0 2650\n2035 2650","A","Lower S40 SIP: 2600 Oct-19, 2550 Jan-20, 2740 Apr-20, 2630 Apr-21, 2640 Oct-21 (plot); 2015–18 from P vs cum; later held by the aquifer"],
+  support:[0,"M","Measured pressures include aquifer support"],
+  wArrive:[2016.5,"A","Before breakthrough (simulation: water downdip of Da by 2019)"],
+  wBT:[2017.8,"M","Lower-zone water breakthrough Oct 2017 (Feb 2018 MRT)"],
+  wLate:[2021.7,"M","Lower zone watered out Sep 2021 (~2000 STB/d water)"],
+  Sgr:[0.30,"A","Swept Sw ≈ 0.7 in the simulation maps"]
+ },
+ Db: {
+  prodStart:[2019.78,"M","First gas 11 Oct 2019"],
+  Pi:[4540,"M","Db SIP at datum at start-up, Oct 2019 (replaces the earlier estimate of 4320)"],
+  decl:["table","M","Measured shut-in pressures (digitised)"],
+  pTable:["2019.78 4540\n2019.95 4470\n2020.05 4320\n2020.3 4210\n2020.65 4060\n2021.7 3730\n2022.25 3560\n2022.7 3440\n2024.1 2950\n2025.0 2650\n2026 2400","A","SIP plot to Oct 2022 (3440 psia at 43 Bcf); 2024–26 extrapolated on the P vs cum trend (60.2 Bcf by Feb 2024)"],
+  support:[0,"M","Measured pressures"],
+  Sw:[0.25,"M","Completion summary: average gas saturation 0.75"], Sg:[0.75,"M","Completion summary"],
+  resThk:[25,"M","Completion summary gross 25 m"], NTG:[0.52,"M","Completion summary net 13 m, N/G 0.52"],
+  wArrive:[2027,"S","No water reported; aquifer listed as an uncertainty"], wBT:[2031,"S","Assumed"], wLate:[2036,"S","Assumed"]
+ },
+ Dc: {
+  prodStart:[2020.27,"M","First gas 8 Apr 2020"],
+  Pi:[4420,"M","Dc SIP at datum at start-up (GeoTap 4364 psia at −2740 m in Dec 2019)"],
+  decl:["table","M","Measured shut-in pressures (digitised)"],
+  pTable:["2020.27 4420\n2020.3 4240\n2020.45 3940\n2020.6 3880\n2020.95 3300\n2021.3 3010\n2021.8 2570\n2022.25 2160\n2022.7 1730\n2024.1 1250\n2025.0 1050\n2026 950","A","SIP plot to Sep 2022 (1730 psia at 32.7 Bcf); 2024–26 extrapolated (40.5 Bcf by Feb 2024, RF 74 %)"],
+  support:[0,"M","Measured pressures"],
+  NTG:[0.82,"M","Completion summary N/G 0.82"],
+  wArrive:[2022.5,"A","PTA 2022–23: edge-aquifer boundary movement, net thickness 15 → 11 m"], wBT:[2026,"S","Assumed"], wLate:[2030,"S","Assumed"]
+ }
+};
+Object.keys(PROD).forEach(w => { if (!WELLS[w]) WELLS[w] = { label:"", v:{} }; Object.assign(WELLS[w].v, PROD[w]); });
+WELLS.Da.label = "Well Da · Upper S40 (production 2014–2023)";
+WELLS.DaL = { label:"Well Da · Lower S40 (watered out 2021)", v: Object.assign({}, PROD.DaL) };
+WELLS.Db.label = "Well Db · S40 (production from Oct 2019)";
+WELLS.Dc.label = "Well Dc · Upper S40 (production from Apr 2020)";
+
+(function(){ const avg = {}; const ids = new Set(); Object.values(WELLS).forEach(w => Object.keys(w.v).forEach(k => ids.add(k)));
+  ids.forEach(k => { const vals = ["Da","Db","Dc"].map(n => (WELLS[n].v[k] || WELLS.Da.v[k])).filter(Boolean); if (!vals.length) return;
+    const nums = vals.map(v=>v[0]); const m = typeof nums[0]==="number" ? nums.reduce((a,b)=>a+b,0)/nums.length : nums[0];
+    avg[k] = [ typeof m==="number" ? +m.toFixed(Math.abs(m)>=1000 ? 0 : Math.abs(m)>=10 ? 1 : 3) : m, "A", "Mean of wells Da, Db, Dc"]; });
+  avg.decl = ["exp","S","Average preset uses an exponential decline"]; avg.support = [20,"S","Assumed"]; avg.dPtot=[3000,"S","Assumed"]; avg.tau=[6,"S","Assumed"]; delete avg.pTable;
+  WELLS.Avg = { label:"Area average · Da, Db, Dc", v: avg }; })();
+function wellDefaults(name){
+  const o = defaults("sap"); const w = WELLS[name] || WELLS.Da;
+  Object.keys(WELLS.Da.v).forEach(k => { if (WELLS.Da.v[k]) o[k] = WELLS.Da.v[k][0]; });
+  Object.keys(w.v).forEach(k => o[k] = w.v[k][0]);
+  return o;
+}
+// make Well Da the default ("Field Beta") values and attach the real-data basis
+Object.keys(WELLS.Da.v).forEach(k => { const s = SCHEMA_BY[k]; if (!s) return; const [v,c,b] = WELLS.Da.v[k]; s.sap = v; s.conf = c; s.basis = b;
+  if (s.lo!=null && typeof v === "number" && (v < s.lo || v > s.hi)){ const r = Math.max(Math.abs(v)*0.08, 1e-6); s.lo = +(v - r).toFixed(4); s.hi = +(v + r).toFixed(4); } });
+if (false) module.exports = {SCHEMA, GROUPS, defaults, WELLS, wellDefaults};
 
 /* ===== Field Beta 4D engine: one calculation chain shared by every tab =====
    fluid -> frame -> saturated moduli -> Vp,Vs,rho -> reflectivity -> convolution -> attributes */
@@ -1042,6 +1194,20 @@ function depthParams(p, o, zft){
   const fK = p.anchor ? o.Kd0/fr0.Kd : 1, fG = p.anchor ? o.mu0/fr0.Gd : 1;
   const Kd = fr.Kd*fK, Gd = fr.Gd*fG;
   const q = Object.assign({}, p, { depth: zft, Pi, Tres: Tc*1.8 + 32, phi });
+  // pressure path at this depth: same absolute drawdown (default) or same fraction of Pi
+  const PMIN = 300, same = Math.abs(Pi - p.Pi) < 1e-6;
+  let clamp = false;
+  if (!same){
+    const frac = p.depPath === "frac", r = Pi/p.Pi, sh = Pi - p.Pi;
+    if (p.decl === "table" && String(p.pTable||"").trim()){
+      const rows = E.parseTable(p.pTable);
+      q.pTable = rows.map(([y,P]) => { let v = frac ? P*r : P + sh; if (v <= PMIN + 0.5){ v = Math.max(v, PMIN); clamp = true; } return y + " " + v.toFixed(1); }).join("\n");
+    } else {
+      let dp = frac ? p.dPtot*r : p.dPtot;
+      if (dp > Pi - PMIN){ dp = Math.max(0, Pi - PMIN); clamp = true; }
+      q.dPtot = dp;
+    }
+  }
   const d2 = E.derive(q), fl = E.fluidAt(q, d2, Pi, 0);
   const rock = E.satRock(q, d2, fl, 0, Kd, Gd, phi);
   q.Vp0 = rock.Vp; q.Vs0 = rock.Vs;
@@ -1049,37 +1215,71 @@ function depthParams(p, o, zft){
   const sens = Math.max(0.05, sig0/Math.max(sig,1e5));
   if (p.frameMode === "threshold") q.thrMax = p.thrMax*sens;
   if (p.frameMode === "power") q.bexp = p.bexp;
-  // shale background
+  // shale background: fixed at the Field Beta overburden values, or a slight Vp trend
   if (p.bgMode === "trend"){
-    const vp = p.obVp + p.shGrad*(z - z0)/1000;
+    const vp = p.obVp + p.shGradM*(z - z0)/1000;
     const gard = v => 310*Math.pow(v,0.25), mud = v => 0.862*v - 1172;
     q.obVp = vp; q.obRho = p.obRho*gard(vp)/gard(p.obVp); q.obVs = p.obVs*Math.max(200,mud(vp))/Math.max(200,mud(p.obVp));
     q.ubSame = true; q.isSame = true;
   }
-  // attenuation: peak frequency of a Ricker after constant-Q propagation (relative to Field Beta)
-  const dt = 2*(z - z0)/p.intVel; // s, two-way
-  const fr0q = p.freq;
-  let f;
-  if (dt >= 0){ const a = Math.PI*dt*fr0q*fr0q/(2*p.Qeff); f = (-a + Math.sqrt(a*a + 4*fr0q*fr0q))/2; }
-  else { const k = 1 - Math.PI*Math.abs(dt)*fr0q/(2*p.Qeff); f = k > 0.05 ? fr0q/Math.sqrt(k) : fr0q*4; }
+  // optional attenuation: Ricker peak frequency after constant-Q propagation over the extra burial
+  let f = p.freq;
+  if (p.attenOn){
+    const dt = 2*(z - z0)/Math.max(1000, p.obVp); // s, two-way through the overburden
+    if (dt >= 0){ const a = Math.PI*dt*f*f/(2*p.Qeff); f = (-a + Math.sqrt(a*a + 4*f*f))/2; }
+    else { const k = 1 - Math.PI*Math.abs(dt)*f/(2*p.Qeff); f = k > 0.05 ? f/Math.sqrt(k) : f*4; }
+  }
   q.freq = f;
   // brine-saturated AI for fluid sensitivity
   const flW = Object.assign({}, fl, { Kinit: fl.b.K, rho: fl.b.rho });
   const rockW = E.satRock(q, d2, flW, 0, Kd, Gd, phi);
-  return { q, z: zft, phi, Tc, Pi, sig: sig/PSI, Kd, Gd, rock, gas: fl.g, fsens: (rockW.AI/rock.AI - 1)*100, sens, f };
+  return { q, z: zft, zm: z, phi, Tc, Pi, sig: sig/PSI, Kd, Gd, rock, gas: fl.g, fsens: (rockW.AI/rock.AI - 1)*100, sens, f, clamp };
 }
 function depthSweep(p, o){
-  const zs = []; const n = 28;
-  for (let i=0;i<=n;i++) zs.push(p.zMin + (p.zMax - p.zMin)*i/n);
+  const zs = []; const n = 28, a = Math.min(p.zMinM, p.zMaxM), b = Math.max(p.zMinM, p.zMaxM);
+  for (let i=0;i<=n;i++) zs.push((a + (b - a)*i/n)/FT);
   return zs.map(z => depthOne(p, o, z));
 }
 function depthOne(p, o, z){
   const dp = depthParams(p, o, z);
-  let oo = null; try { oo = E.run(dp.q, {lite:true, spy:2, spk:true}); } catch(e){}
+  let oo = null; try { oo = E.run(dp.q, {lite:true, spy: Math.min(4, Math.max(2, p.spy)), spk:true}); } catch(e){}
   const k = oo ? oo.kpi : null;
   const ob = {vp:dp.q.obVp, vs:dp.q.obVs, rho:dp.q.obRho};
   const R0 = (dp.rock.AI - ob.rho*ob.vp)/(dp.rock.AI + ob.rho*ob.vp);
-  return Object.assign(dp, { o: oo, k, R0 });
+  // Shuey gradient and base AVO class at the top of the sand (Rutherford–Williams / Castagna)
+  const s = dp.rock, vpm = (s.Vp + ob.vp)/2, vsm = (s.Vs + ob.vs)/2, rhm = (s.rho + ob.rho)/2;
+  const G0 = 0.5*(s.Vp - ob.vp)/vpm - 2*(vsm/vpm)*(vsm/vpm)*((s.rho - ob.rho)/rhm + 2*(s.Vs - ob.vs)/vsm);
+  const baseClass = R0 > 0.02 ? "1" : R0 >= -0.02 ? "2" : G0 < 0 ? "3" : "4";
+  let pmin = Infinity; if (oo) oo.S.forEach(x => { if (x.P < pmin) pmin = x.P; });
+  return Object.assign(dp, { o: oo, k, R0, G0, baseClass, pmin });
+}
+// scenario depths in metres from the text list: 800–7000 m, below the seabed, unique, at most 8
+function parseZScen(p){
+  const wdm = p.wd*FT, bad = [];
+  const v = String(p.zScen||"").split(/[\s,;]+/).filter(Boolean).map(Number);
+  const ok = [];
+  v.forEach(x => { if (!isFinite(x) || x < 800 || x > 7000 || x <= wdm + 50) bad.push(x); else if (!ok.some(y => Math.abs(y-x) < 1)) ok.push(x); });
+  ok.sort((a,b)=>a-b);
+  return { list: ok.slice(0,8), bad, extra: Math.max(0, ok.length - 8) };
+}
+// scenarios + Field Beta reference, with monitor-survey metrics
+function depthScenarios(p, o){
+  const zs = parseZScen(p);
+  const rows = [{ label:"Field Beta", ref:true, zft:p.depth }].concat(zs.list.map(m => ({ label: m.toFixed(0)+" m", ref:false, zft:m/FT })));
+  rows.forEach(r => {
+    const x = depthOne(p, o, r.zft); Object.assign(r, x);
+    if (x.o){
+      const nm = noiseModel(x.q, x.o), im = x.o.im, k = x.k;
+      r.nm = nm; r.Abase = x.o.Abase[0];
+      r.full = x.o.pA.net[0][im]; r.dAImon = k.mon.dAI; r.D = k.Dpct; r.A = k.Apct;
+      r.cls = classify(k.Apct, k.Dpct, nm.st[p.aSrc==="near"?1:0].sigmaPct, nm.sigmaDpct, p.kDet).c;
+      r.pd = detect(x.o.dA.net[0][im], nm.st[0].sigma, p.kDet).pd;
+      r.stacks = x.o.stacks.map((s,si) => x.o.pA.net[si][im]);
+    }
+  });
+  const amax = Math.max(1e-12, ...rows.filter(r=>r.o).map(r=>Math.abs(r.Abase)));
+  rows.forEach(r => { r.unstable = r.o ? Math.abs(r.Abase) < 0.15*amax : false; });
+  return { rows, bad: zs.bad, extra: zs.extra };
 }
 
 /* ---------- B5: NTG ---------- */
@@ -1097,7 +1297,7 @@ const OUTPUTS = [
   ["pFull","Full %ΔA at monitor","%"],["pNear","Near %ΔA at monitor","%"],["pFar","Far %ΔA at monitor","%"],["pUF","Ultra-Far %ΔA at monitor","%"],
   ["D","D at monitor (% of base full)","%"],["cls","Class 1 at monitor (1/0)",""],["tsTop","Time shift, top Field Beta at monitor","ms"],
   ["tsInt","Interval time shift across Field Beta","ms"],["detYr","Earliest detectable softening (full)","yr"],["pd","P(detect) full stack at monitor",""],
-  ["soft84","Peak softening at +84 ms (Depth tab)","%"],["pNtgB","Full %ΔA at location B NTG","%"]
+  ["softZ","Peak softening at 5000 m (deepest Depth scenario)","%"],["pNtgB","Full %ΔA at location B NTG","%"]
 ];
 function evalOutputs(p, want){
   const o = E.run(p, {lite:true, spy: 2, spk:true});
@@ -1118,16 +1318,16 @@ function evalOutputs(p, want){
     const ts = timeShift(p, o, {dz: 20, years: [o.im]});
     out.tsTop = ts.prof[0].top; out.tsInt = ts.prof[0].base - ts.prof[0].top;
   }
-  if (want.has("soft84")){
-    const z = p.depth + 0.084*p.intVel/2/FT;
-    const r = depthOne(p, o, z); out.soft84 = r.k ? r.k.ai.mn : NaN;
+  if (want.has("softZ")){
+    const zl = parseZScen(p).list, zm = zl.length ? zl[zl.length-1] : 5000;
+    const r = depthOne(p, o, zm/FT); out.softZ = r.k ? r.k.ai.mn : NaN;
   }
   if (want.has("pNtgB")){ const oo = ntgRun(p, p.ntgB); out.pNtgB = oo.pA.net[0][oo.im]; }
   return out;
 }
 
 return { rng, gauss, Phi, erf, stressPath, timeShift, shallowDP, misalignAmp, noiseModel, detect, noisyTraces,
-  SCEN, scenarios, scenarioCloud, ellipse, mahal, classify, tri, friable, depthParams, depthSweep, depthOne, ntgRun, rmsOf,
+  SCEN, scenarios, scenarioCloud, ellipse, mahal, classify, tri, friable, depthParams, depthSweep, depthOne, parseZScen, depthScenarios, ntgRun, rmsOf,
   OUTPUTS, evalOutputs, NRMS_KEYS };
 })();
 if (false) module.exports = AN;
@@ -1180,7 +1380,7 @@ function buildRail(){
       const wide = s.type === "txt";
       html += `<div class="fld ${wide?"wide":""}" data-fid="${s.id}" data-search="${esc((s.label+" "+s.unit+" "+s.tip+" "+s.id).toLowerCase())}">${lab}${ctl}<div class="hint" id="h_${s.id}">${siHint(s, v)}</div></div>`;
     });
-    html += `<button class="grp-reset" data-reset="${g}">Reset group to Field Beta defaults</button></details>`;
+    html += `<button class="grp-reset" data-reset="${g}">Reset group to Well Da values</button></details>`;
   });
   rail.innerHTML = html;
   rail.addEventListener("input", onRailInput);
@@ -1603,12 +1803,13 @@ function drawCrossplot(sel, sc, cloud, sa, sd){
   const xp = STATE.ui.xp || (STATE.ui.xp = {x0:"", x1:"", y0:"", y1:"", fit:"all"});
   const meas = STATE.zones.map(z => [parseFloat(z.A), parseFloat(z.D), z.name]).filter(q => isFinite(q[0]) && isFinite(q[1]));
   const scen = sc.map(s => [s.A, s.D, s.id]);
-  let pts = xp.fit === "measured" && meas.length ? meas.slice() : xp.fit === "scenarios" ? scen.slice() : scen.concat(meas);
-  if (xp.fit === "all") cloud.forEach(e => { if (e){ pts.push([e.mx-e.a, e.my-e.a]); pts.push([e.mx+e.a, e.my+e.a]); } });
+  let pts = xp.fit === "measured" && meas.length ? meas.slice() : xp.fit === "scenarios" ? scen.slice() : xp.fit === "ellipses" ? [] : scen.concat(meas);
+  if (xp.fit === "ellipses") cloud.forEach(e => { if (e){ pts.push([e.mx-e.a, e.my-e.a]); pts.push([e.mx+e.a, e.my+e.a]); } });
+  if (xp.fit === "ellipses") scen.concat(meas).forEach(q => pts.push(q));
   if (xp.fit !== "measured") pts.push([-p.kDet*sa, -p.kDet*sd], [p.kDet*sa, p.kDet*sd]);
   let ax0 = Math.min(...pts.map(q=>q[0])), ax1 = Math.max(...pts.map(q=>q[0])), ay0 = Math.min(...pts.map(q=>q[1])), ay1 = Math.max(...pts.map(q=>q[1]));
   if (ax1 - ax0 < 1e-6){ ax0 -= 1; ax1 += 1; } if (ay1 - ay0 < 1e-6){ ay0 -= 1; ay1 += 1; }
-  const px = (ax1-ax0)*0.08, py = (ay1-ay0)*0.08; ax0-=px; ax1+=px; ay0-=py; ay1+=py;
+  const px = (ax1-ax0)*0.12, py = (ay1-ay0)*0.12; ax0-=px; ax1+=px; ay0-=py; ay1+=py;
   const num = v => (v === "" || v == null || !isFinite(parseFloat(v))) ? null : parseFloat(v);
   let x0 = num(xp.x0) ?? ax0, x1 = num(xp.x1) ?? ax1, y0 = num(xp.y0) ?? ay0, y1 = num(xp.y1) ?? ay1;
   if (x1 <= x0) x1 = x0 + 1; if (y1 <= y0) y1 = y0 + 1;
@@ -1654,7 +1855,7 @@ function xpControls(){
   const xp = STATE.ui.xp || (STATE.ui.xp = {x0:"", x1:"", y0:"", y1:"", fit:"all"});
   const f = (k, l) => `<label class="small">${l} <input type="number" step="any" data-xp="${k}" value="${xp[k]}" placeholder="auto" style="width:72px"></label>`;
   return `<div class="row" style="gap:8px;flex-wrap:wrap">${f("x0","A min")}${f("x1","A max")}${f("y0","D min")}${f("y1","D max")}
-    <label class="small">Auto-fit to <select data-xp="fit"><option value="all" ${xp.fit==="all"?"selected":""}>everything</option><option value="scenarios" ${xp.fit==="scenarios"?"selected":""}>scenarios</option><option value="measured" ${xp.fit==="measured"?"selected":""}>measured zones</option></select></label>
+    <label class="small">Auto-fit to <select data-xp="fit"><option value="all" ${xp.fit==="all"?"selected":""}>scenarios + measured</option><option value="ellipses" ${xp.fit==="ellipses"?"selected":""}>including full ellipses</option><option value="scenarios" ${xp.fit==="scenarios"?"selected":""}>scenarios</option><option value="measured" ${xp.fit==="measured"?"selected":""}>measured zones</option></select></label>
     <button data-xpreset="1">Reset to auto</button></div>`;
 }
 document.addEventListener("change", e => { const k = e.target.dataset && e.target.dataset.xp; if (!k) return; STATE.ui.xp[k] = e.target.value; rerenderKeepFocus(); });
@@ -1807,44 +2008,108 @@ function tabNoise(o){
 }
 
 /* ================= B4: DEPTH ================= */
+function depthBars(el, cats, groups, ylab, opt){
+  opt = opt || {};
+  el = $(el); if (!el) return;
+  const W = 900, H = 260, pl = 56, pr = 16, pt = 14, pb = 40;
+  const vals = []; groups.forEach(g => g.y.forEach(v => { if (isFinite(v)) vals.push(v); }));
+  let y0 = Math.min(0, ...vals), y1 = Math.max(0, ...vals); const pad = (y1 - y0)*0.12 || 1; y0 -= y0 < 0 ? pad : 0; y1 += pad;
+  const Y = v => pt + (1 - (v - y0)/(y1 - y0))*(H - pt - pb), cw = (W - pl - pr)/cats.length, bw = Math.min(46, cw*0.8/groups.length);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(ylab)}">`;
+  for (let i=0;i<=5;i++){ const v = y0 + (y1-y0)*i/5; s += `<line class="gl" x1="${pl}" x2="${W-pr}" y1="${Y(v)}" y2="${Y(v)}"/><text class="tick" x="${pl-6}" y="${Y(v)+3}" text-anchor="end">${fx(v,1)}</text>`; }
+  s += `<line class="zl" x1="${pl}" x2="${W-pr}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  cats.forEach((c,i) => {
+    const cx = pl + cw*(i + 0.5), x0 = cx - bw*groups.length/2;
+    groups.forEach((g,j) => { const v = g.y[i]; if (!isFinite(v)) return; const ya = Y(Math.max(0,v)), yb = Y(Math.min(0,v));
+      s += `<rect x="${x0 + j*bw + 2}" y="${ya}" width="${bw - 4}" height="${Math.max(1, yb - ya)}" rx="3" fill="${g.color}"><title>${esc(g.name)} · ${esc(c)}: ${sgn(v,2)}</title></rect>`;
+      if (opt.values !== false) s += `<text class="tick" x="${x0 + j*bw + bw/2}" y="${v >= 0 ? ya - 4 : yb + 12}" text-anchor="middle">${sgn(v,2)}</text>`; });
+    if (opt.note && opt.note[i]) s += `<text class="tick" x="${cx}" y="${Y(0) - 8}" text-anchor="middle" fill="var(--soft)">${esc(opt.note[i])}</text>`;
+    s += `<text class="tick" x="${cx}" y="${H - pb + 16}" text-anchor="middle">${esc(c)}</text>`;
+  });
+  s += `<text class="axl" transform="translate(12 ${(pt+H-pb)/2}) rotate(-90)" text-anchor="middle">${esc(ylab)}</text></svg>`;
+  el.innerHTML = `<div class="legend">${groups.map(g=>`<span><i style="background:${g.color}"></i>${esc(g.name)}</span>`).join("")}</div><div class="chart">${s}</div>`;
+}
 function tabDepth(o){
-  const p = o.p;
+  const p = o.p, FTm = 0.3048;
   const sw = cached("depth", () => AN.depthSweep(p, o));
-  const offs = [0,30,48,66,84], pre = cached("depthPre", () => offs.map(ms => AN.depthOne(p, o, p.depth + ms/1000*p.intVel/2/0.3048)));
-  const zs = sw.map(r=>r.z);
-  const ref = pre[0], last = pre[4];
-  const mag = r => r.k ? Math.max(Math.abs(r.o.dA.net[0][r.o.im]), 1e-12) : NaN;
-  const physFade = mag(last)/mag(ref);
-  const explained = (1 - physFade)/Math.max(1e-6, 1 - p.fadeObs);
-  const bgOther = cached("depthBg", () => { const q = Object.assign({}, p, {bgMode: p.bgMode==="fixed"?"trend":"fixed"}); return [AN.depthOne(q, o, p.depth), AN.depthOne(q, o, p.depth + 0.084*p.intVel/2/0.3048)]; });
-  let h = `<section class="card"><h3>Physics</h3><details><summary class="small">Show equations</summary><div class="how mono" style="line-height:1.8">
-    φ(z) = φ_ml·e^(−c·(z − WD)) (Athy)${p.anchor?" × anchor to φ at Field Beta":""}; T(z) = T_sea + G·(z − WD); Pp = gradient·z; Sv = 0.4445·WD + sediment gradient·(z − WD)<br>
-    Dry frame: friable sand (Hertz–Mindlin at φc + modified lower Hashin–Shtrikman), coordination ${p.coordN}, slip ${p.slip}${p.anchor?", scaled to the K_dry and μ inverted from the Field Beta logs":""}<br>
-    Stress sensitivity ∝ 1/σ′ (Hertz–Mindlin): threshold max stiffening scaled by σ′(Field Beta)/σ′(z)<br>
-    Gas and brine from Batzle–Wang at P(z), T(z). Ricker peak frequency after constant-Q propagation: f = [−a + √(a² + 4f₀²)]/2, a = π·Δt·f₀²/(2Q)<br>
-    Background shale: ${p.bgMode==="fixed"?"fixed at the Field Beta values (non-changing)":"Vp trend + Gardner density + mudrock Vs"}. Same ΔP history at every depth.</div></details></section>`;
-  h += `<div class="three">${card("d_phi","Porosity & frame moduli","φ, K_dry, μ (GPa) vs depth.","")}${card("d_vel","Velocities","Sand Vp, Vs (virgin) and shale Vp (m/s).","")}${card("d_gas","Gas properties","Gas K (MPa) and density (kg/m³) at virgin P, T.","")}</div>`;
-  h += `<div class="three">${card("d_sens","Sensitivities","Fluid sensitivity = AI(brine)/AI(gas) − 1 (%); frame stiffening scale (×).","")}${card("d_4d","4D response","Peak softening and hardening (ΔAI %), R_SH.","")}${card("d_base","Base contrast & tuning","Normal-incidence R0 (×100), peak frequency (Hz).","")}</div>`;
-  h += card("d_sec",`Full-stack 4D difference vs depth at the monitor survey`, "One trace per depth, same ΔP and saturation history, depth-specific rock, gas, background and wavelet.", "");
-  h += card("d_pre","ΔAI vs time at the deck levels", `Field Beta and +30, +48, +66, +84 ms converted with ${p.intVel} m/s.`, "");
-  h += `<section class="card"><h3>Background mode comparison</h3><div class="tbl"><table><tr><th>Mode</th><th>Level</th><th>R0 (normal incidence)</th><th>Full A_base ×10⁻³</th><th>Full %ΔA at the monitor survey</th></tr>
-    ${[[p.bgMode, pre[0], "Field Beta"], [p.bgMode, pre[4], "+84 ms"], [p.bgMode==="fixed"?"trend":"fixed", bgOther[0], "Field Beta"], [p.bgMode==="fixed"?"trend":"fixed", bgOther[1], "+84 ms"]].map(([m,r,l])=>`<tr><td>${m==="fixed"?"Non-changing":"Co-varying"}</td><td>${l}</td><td>${fx(r.R0,3)}</td><td>${r.o?fx(r.o.Abase[0]*1e3,1):"—"}</td><td>${r.o?sgn(r.o.pA.net[0][r.o.im],1):"—"}</td></tr>`).join("")}</table></div></section>`;
-  h += readout(`Effect: from Field Beta to +84 ms rock physics and resolution alone keep ${fx(physFade*100,0)} % of the monitor-year full-stack change. The deck shows about ${fx(p.fadeObs*100,0)} %, so depth effects explain about ${fx(Math.max(0,Math.min(1,explained))*100,0)} % of the observed fading; ${explained < 0.8 ? "the rest needs less fluid change or poorer connectivity below Field Beta" : "little extra fluid or connectivity change is needed"}.`);
+  const sc = cached("depthScen", () => AN.depthScenarios(p, o));
+  const rows = sc.rows.filter(r => r.o), ref = sc.rows[0], scen = rows.filter(r => !r.ref);
+  const deep = scen.length ? scen[scen.length-1] : ref;
+  const zsm = sw.map(r => r.z*FTm), zRef = p.depth*FTm;
+  const col = (r, i) => r.ref ? "var(--ink)" : `hsl(${210 - i*45} 60% ${42 + i*3}%)`;
+  const marks = (y, fmt) => scen.map(r => ({x:r.zm, y:y(r), color:"var(--ink)", r:4, label:r.label})).filter(m => isFinite(m.y));
+  const bgOther = cached("depthBg", () => { const q = Object.assign({}, p, {bgMode: p.bgMode==="fixed"?"trend":"fixed"}); return [AN.depthOne(q, o, p.depth), AN.depthOne(q, o, deep.zft)]; });
+  const vl = [{x:zRef, label:"Field Beta", color:"var(--c5)"}].concat(scen.map(r => ({x:r.zm, color:"var(--muted)", dash:"2,4"})));
+  const warn = [];
+  if (sc.bad.length) warn.push(`Ignored depths (outside 800–7000 m or above the seabed): ${sc.bad.join(", ")}.`);
+  if (sc.extra) warn.push(`Only the first 8 depths are used.`);
+  let h = `<section class="card"><h3>Physics</h3><p class="cap">Each scenario puts the same Field Beta sand (thickness, NTG, gas gravity, salinity, water history) at a different burial depth. Pressure, temperature, porosity, effective stress, frame, gas and brine follow the depth trends; the background shale is ${p.bgMode==="fixed"?"held at the Field Beta values":"on a slight Vp trend ("+p.shGradM+" m/s per km)"}. Depletion: ${p.depPath==="frac"?"same fraction of Pi as Field Beta":"same absolute drawdown as Field Beta"}${p.decl==="table"?" (measured P–year table shifted to each depth)":""}. Wavelet: ${p.attenOn?"constant-Q change with depth (Q "+p.Qeff+")":"Field Beta wavelet at every depth"}.</p>
+    <details><summary class="small">Show equations</summary><div class="how mono" style="line-height:1.8">
+    z in m TVDSS; Pi(z) = ppGrad·z${p.anchor?" × anchor (Pi at Field Beta)":""}; T(z) = T_sea + G·(z − WD)${p.anchor?" × anchor":""}; Sv = 0.4445·WD + sediment gradient·(z − WD); σ′ = Sv − α·Pi<br>
+    φ(z) = φ_ml·e^(−c·(z − WD)) (Athy)${p.anchor?" × anchor to φ at Field Beta":""}<br>
+    Dry frame: friable sand (Hertz–Mindlin at φc + modified lower Hashin–Shtrikman), coordination ${p.coordN}, slip ${p.slip}${p.anchor?", scaled to the K_dry and μ of Field Beta":""}<br>
+    Frame stiffening on depletion: threshold maximum × σ′(Field Beta)/σ′(z); onset ${p.thrDP} psi of depletion at every depth<br>
+    Pressure path: ${p.depPath==="frac"?"P(z,t) = Pi(z)·P_FB(t)/Pi_FB":"P(z,t) = Pi(z) − [Pi_FB − P_FB(t)]"}, clamped at 300 psia<br>
+    Gas and brine: Batzle–Wang at P(z,t), T(z); Gassmann; base AVO class from R0 and the Shuey gradient G at the top of the sand${p.attenOn?"<br>Ricker peak frequency after constant-Q propagation: f = [−a + √(a² + 4f₀²)]/2, a = π·Δt·f₀²/(2Q)":""}</div></details>
+    ${warn.length?`<p class="small" style="color:var(--soft)">${warn.join(" ")}</p>`:""}</section>`;
+  // scenario table
+  const th = ["Depth","Pi psi","T °C","σ′ psi","φ","Vp m/s","Vs m/s","ρ kg/m³","gas K MPa","gas ρ","fluid sens. %","stress scale","R0","base class","peak soft. ΔAI %","when","peak hard. ΔAI %","crossover","R_SH ΔAI","R_SH full","ΔAI monitor %","Full %ΔA","D %","A–D class","P(detect)"];
+  const tr = r => { const k = r.k, uf = r.unstable ? ` title="% unstable — base amplitude near zero" style="outline:2px dashed var(--soft)"` : "";
+    return `<tr${r.ref?` style="font-weight:600"`:""}><td>${r.ref?`Field Beta (${fx(r.zm,0)} m)`:r.label}${r.clamp?` <span class="pill bad" title="Pressure reached the 300 psia clamp">clamp</span>`:""}</td>
+    <td>${fx(r.Pi,0)}</td><td>${fx(r.Tc,0)}</td><td>${fx(r.sig,0)}</td><td>${fx(r.phi,3)}</td><td>${fx(r.rock.Vp,0)}</td><td>${fx(r.rock.Vs,0)}</td><td>${fx(r.rock.rho,0)}</td>
+    <td>${fx(r.gas.K/1e6,1)}</td><td>${fx(r.gas.rho,0)}</td><td>${fx(r.fsens,1)}</td><td>${fx(r.sens,2)}</td><td>${sgn(r.R0,3)}</td><td>${r.baseClass}</td>
+    <td class="soft">${sgn(k.ai.mn,2)}</td><td>${fx(r.o.years[k.ai.mnI],1)}</td><td class="${k.ai.mx>0?"hard":""}">${sgn(k.ai.mx,2)}</td><td>${k.cross==null?"—":fx(k.cross,1)}</td>
+    <td>${fx(k.ai.R,2)} ${rshPill(k.ai.R)}</td><td>${fx(k.stP[0].R,2)} ${rshPill(k.stP[0].R)}</td>
+    <td class="${SHC(r.dAImon)}">${sgn(r.dAImon,2)}</td><td class="${SHC(r.full)}"${uf}>${sgn(r.full,1)}${r.unstable?" ⚠":""}</td><td${uf}>${sgn(r.D,1)}</td><td>${r.cls||"–"}</td><td>${fx(r.pd,2)}</td></tr>`; };
+  h += `<section class="card"><h3>Depth scenarios at the monitor survey</h3><p class="cap">Same sand, same history, different burial depth. ⚠ marks %ΔA that is unstable because the base amplitude is under 15 % of the largest one; “clamp” marks a scenario whose pressure hit 300 psia.</p>
+    <div class="tbl"><table><tr>${th.map(x=>`<th>${x}</th>`).join("")}</tr>${sc.rows.filter(r=>r.o).map(tr).join("")}</table></div></section>`;
+  h += `<div class="two">${card("d_t","ΔAI vs time per depth","Normal-incidence impedance change; stage lines from the water history.","")}${card("d_ft","Full-stack %ΔA vs time per depth","Relative to each depth's own base amplitude.","")}</div>`;
+  h += `<div class="two">${card("d_bar","Peak softening and peak hardening per depth","ΔAI % from the base survey to the monitor survey.","")}${card("d_stk","%ΔA per stack at the monitor survey","Full, Near, Mid 1, Mid 2, Far and Ultra-Far for each depth.","")}</div>`;
+  h += `<div class="two">${card("d_xp","A–D crossplot at the monitor survey",`One point per depth; dashed lines at ±k·σ of each axis (Field Beta noise).${scen.filter(r=>r.unstable).map(r=>` ⚠ ${r.label} is off scale (A ${sgn(r.A,0)} %, D ${sgn(r.D,0)} %): base amplitude near zero.`).join("")}`,"")}${card("d_4d","4D response vs depth","Peak softening and hardening (ΔAI %), R_SH; dots at the scenario depths.","")}</div>`;
+  h += `<div class="three">${card("d_phi","Porosity & frame moduli","φ, K_dry, μ (GPa) vs depth (m).","")}${card("d_vel","Velocities","Sand Vp, Vs (virgin) and the background shale Vp (m/s).","")}${card("d_gas","Gas properties","Gas K (MPa) and density (kg/m³) at virgin P, T.","")}</div>`;
+  h += `<div class="two">${card("d_sens","Sensitivities","Fluid sensitivity = AI(brine)/AI(gas) − 1 (%); frame stiffening scale (×10).","")}${card("d_base","Base contrast","R0 ×100 and the Shuey gradient G ×100 at the top of the sand; class boundaries at R0 = ±2.","")}</div>`;
+  h += `<section class="card"><h3>Full-stack 4D difference vs calendar year, one panel per depth</h3><p class="cap">Monitor-minus-base difference for every year; same colour scale in every panel.</p><div id="d_secs" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px"></div></section>`;
+  h += `<section class="card"><h3>Background shale comparison</h3><div class="tbl"><table><tr><th>Shale</th><th>Depth</th><th>Shale Vp m/s</th><th>R0</th><th>Full A_base ×10⁻³</th><th>Full %ΔA at the monitor survey</th></tr>
+    ${[[p.bgMode, ref, "Field Beta"], [p.bgMode, deep, deep.ref?"Field Beta":deep.label], [p.bgMode==="fixed"?"trend":"fixed", bgOther[0], "Field Beta"], [p.bgMode==="fixed"?"trend":"fixed", bgOther[1], deep.ref?"Field Beta":deep.label]].map(([m,r,l])=>`<tr><td>${m==="fixed"?"Fixed":"Slight trend"}${m===p.bgMode?" (active)":""}</td><td>${l}</td><td>${fx(r.q.obVp,0)}</td><td>${sgn(r.R0,3)}</td><td>${r.o?fx(r.o.Abase[0]*1e3,1):"—"}</td><td>${r.o?sgn(r.o.pA.net[0][r.o.im],1):"—"}</td></tr>`).join("")}
+    </table></div></section>`;
+  // readout
+  if (scen.length){
+    const a = scen[0], b = scen[scen.length-1];
+    let cc = ""; for (let i=1;i<sw.length;i++){ const c0 = sw[i-1], c1 = sw[i]; const cl = x => x.R0 > 0.02 ? "1" : x.R0 >= -0.02 ? "2" : "3"; if (cl(c0) !== cl(c1)){ cc += ` The base reflection changes from class ${cl(c0)} to class ${cl(c1)} at about ${Math.round(c1.z*FTm/50)*50} m.`; } }
+    const unst = scen.filter(r=>r.unstable).map(r=>r.label);
+    h += readout(`Effect: from ${a.label} to ${b.label} peak softening changes from ${sgn(a.k.ai.mn,2)} % to ${sgn(b.k.ai.mn,2)} % ΔAI and peak hardening from ${sgn(a.k.ai.mx,2)} % to ${sgn(b.k.ai.mx,2)} %; R_SH (ΔAI) moves from ${fx(a.k.ai.R,2)} to ${fx(b.k.ai.R,2)}. Fluid sensitivity falls from ${fx(a.fsens,1)} % to ${fx(b.fsens,1)} % and the frame-stiffening scale from ${fx(a.sens,2)} to ${fx(b.sens,2)}.${cc}${unst.length?` %ΔA is unstable at ${unst.join(", ")} because the base amplitude is near zero; use ΔAI there.`:""}${scen.some(r=>r.clamp)?` Pressure reached the 300 psia clamp at ${scen.filter(r=>r.clamp).map(r=>r.label).join(", ")}.`:""}`);
+  }
   $("#main").innerHTML = h;
+  const all = sc.rows.filter(r=>r.o);
+  lineChart("#d_t", {series: all.map((r,i)=>({name: r.ref?"Field Beta":r.label, x:r.o.years, y:r.o.dAI, color:col(r,i-1), w: r.ref?2.8:2, dash: r.ref?"5,3":null})), xlab:"year", ylab:"ΔAI (%)", vlines:stageLines(o,false), xfmt:v=>fx(v,0)});
+  lineChart("#d_ft", {series: all.map((r,i)=>({name: r.ref?"Field Beta":r.label, x:r.o.years, y:r.o.pA.net[0], color:col(r,i-1), w: r.ref?2.8:2, dash: r.ref?"5,3":null})), xlab:"year", ylab:"full %ΔA", vlines:stageLines(o,false), xfmt:v=>fx(v,0)});
+  depthBars("#d_bar", all.map(r=>r.ref?"Field Beta":r.label), [{name:"peak softening", color:"var(--soft)", y:all.map(r=>r.k.ai.mn)},{name:"peak hardening", color:"var(--hard)", y:all.map(r=>r.k.ai.mx)}], "ΔAI (%)");
+  depthBars("#d_stk", all.map(r=>r.ref?"Field Beta":r.label), o.stacks.map((s,si)=>({name:s.name, color:STK_COL[si], y:all.map(r=>r.unstable?NaN:r.stacks[si])})), "%ΔA at monitor", {values:false, note: all.map(r=>r.unstable?"⚠ unstable (base ≈ 0)":"")});
+  { const nm = noiseOf(o), sa = nm.st[p.aSrc==="near"?1:0].sigmaPct, sd = nm.sigmaDpct, kk = p.kDet;
+    const st = all.filter(r=>!r.unstable), xs = st.map(r=>r.A), ys = st.map(r=>r.D);
+    const xmin = Math.min(-kk*sa*1.3, ...xs.map(v=>v - Math.abs(v)*0.2 - 1)), xmax = Math.max(kk*sa*1.3, ...xs.map(v=>v + Math.abs(v)*0.2 + 1));
+    const ymin = Math.min(-kk*sd*1.2, ...ys.map(v=>v - 2)), ymax = Math.max(kk*sd*1.2, ...ys.map(v=>v + 2));
+    const cl = (v,a,b) => Math.max(a, Math.min(b, v));
+    const mk = all.map((r,i)=>{ const off = r.unstable; return {x: off?cl(r.A,xmin,xmax):r.A, y: off?cl(r.D,ymin,ymax):r.D, color: off?"var(--muted)":col(r,i-1), r:6,
+      label: (r.ref?"Field Beta":r.label) + (off?" ⚠":"")}; });
+    lineChart("#d_xp", {series:[{name:"depth scenarios", x:mk.map(m=>m.x), y:mk.map(m=>m.y), color:"var(--ink)", dots:true, r:0.1}], marks: mk,
+      vlines:[{x:-kk*sa, dash:"4,4"},{x:kk*sa, dash:"4,4"}], hlines:[{y:-kk*sd},{y:kk*sd}], xlab:"A (% change, full stack)", ylab:"D (%)", height:300, xmin, xmax, ymin, ymax, xunit:"% A", legend:false}); }
   const ok = sw.filter(r=>r.k);
-  lineChart("#d_phi", {series:[{name:"φ ×10", x:zs, y:sw.map(r=>r.phi*10), color:"var(--c5)"},{name:"K_dry GPa", x:zs, y:sw.map(r=>r.Kd/1e9), color:"var(--c4)"},{name:"μ GPa", x:zs, y:sw.map(r=>r.Gd/1e9), color:"var(--c3)"}], xlab:"depth (ft TVDSS)", height:210, zero:false, tint:false, vlines:[{x:p.depth, label:"Field Beta"}]});
-  lineChart("#d_vel", {series:[{name:"sand Vp", x:zs, y:sw.map(r=>r.rock.Vp), color:"var(--c5)"},{name:"sand Vs", x:zs, y:sw.map(r=>r.rock.Vs), color:"var(--c4)"},{name:"shale Vp", x:zs, y:sw.map(r=>r.q.obVp), color:"var(--muted)", dash:"4,3"}], xlab:"depth (ft)", height:210, zero:false, tint:false, vlines:[{x:p.depth, label:"Field Beta"}]});
-  lineChart("#d_gas", {series:[{name:"gas K MPa", x:zs, y:sw.map(r=>r.gas.K/1e6), color:"var(--c2)"},{name:"gas ρ /2", x:zs, y:sw.map(r=>r.gas.rho/2), color:"var(--c1)"}], xlab:"depth (ft)", height:210, zero:false, tint:false, vlines:[{x:p.depth, label:"Field Beta"}]});
-  lineChart("#d_sens", {series:[{name:"fluid sensitivity %", x:zs, y:sw.map(r=>r.fsens), color:"var(--c3)"},{name:"stress scale ×10", x:zs, y:sw.map(r=>r.sens*10), color:"var(--c4)"}], xlab:"depth (ft)", height:210, tint:false, vlines:[{x:p.depth, label:"Field Beta"}]});
-  lineChart("#d_4d", {series:[{name:"peak softening", x:ok.map(r=>r.z), y:ok.map(r=>r.k.ai.mn), color:"var(--soft)"},{name:"peak hardening", x:ok.map(r=>r.z), y:ok.map(r=>r.k.ai.mx), color:"var(--hard)"},{name:"R_SH", x:ok.map(r=>r.z), y:ok.map(r=>Math.min(3,r.k.ai.R)), color:"var(--ink)", dash:"4,3"}], xlab:"depth (ft)", height:210, vlines:[{x:p.depth, label:"Field Beta"}]});
-  lineChart("#d_base", {series:[{name:"R0 ×100", x:zs, y:sw.map(r=>r.R0*100), color:"var(--c6)"},{name:"peak frequency Hz", x:zs, y:sw.map(r=>r.f), color:"var(--c5)", dash:"4,3"}], xlab:"depth (ft)", height:210, tint:false, vlines:[{x:p.depth, label:"Field Beta"}]});
-  // section vs depth
-  const traces = [], tmax = []; let tm = 0;
-  ok.forEach(r => { const sp = r.o.spk.net[0][r.o.im]; sp.forEach(z=>{ if (z.t>tm) tm = z.t; }); });
-  const half = Math.max(...ok.map(r=>r.o.wav.half*r.o.wav.dt));
-  ok.forEach(r => { const b = ENG.trace(r.o.spk.net[0][r.o.ib], r.o.wav, -half, tm+half, 0.5), m = ENG.trace(r.o.spk.net[0][r.o.im], r.o.wav, -half, tm+half, 0.5); traces.push(m.map((v,j)=>(v-b[j])*p.scaler)); });
-  drawSection("#d_sec", {traces, t0:-half, t1:tm+half, xvals: ok.map(r=>r.z), mode:"diff", xname:"depth ft", xfmt:v=>fx(v,0), vlines:[{x:p.depth, label:"Field Beta", color:"#f5c542"}], height:200});
-  lineChart("#d_pre", {series: pre.map((r,i)=>({name: i?`+${offs[i]} ms`:"Field Beta", x:r.o.years, y:r.o.dAI, color:`hsl(${200+i*35} 55% ${40+i*5}%)`, w: i?1.8:2.6})), xlab:"year", ylab:"ΔAI (%)", vlines:stageLines(o,false), xfmt:v=>fx(v,0)});
+  lineChart("#d_4d", {series:[{name:"peak softening", x:ok.map(r=>r.z*FTm), y:ok.map(r=>r.k.ai.mn), color:"var(--soft)"},{name:"peak hardening", x:ok.map(r=>r.z*FTm), y:ok.map(r=>r.k.ai.mx), color:"var(--hard)"},{name:"R_SH", x:ok.map(r=>r.z*FTm), y:ok.map(r=>Math.min(3,r.k.ai.R)), color:"var(--c4)", dash:"4,3"}],
+    marks: scen.flatMap(r=>[{x:r.zm, y:r.k.ai.mn, color:"var(--soft)", label:r.label},{x:r.zm, y:r.k.ai.mx, color:"var(--hard)"}]), xlab:"depth (m TVDSS)", height:240, tint:false, vlines:[{x:zRef, label:"Field Beta", color:"var(--c5)"}], xfmt:v=>fx(v,0)});
+  lineChart("#d_phi", {series:[{name:"φ ×10", x:zsm, y:sw.map(r=>r.phi*10), color:"var(--c5)"},{name:"K_dry GPa", x:zsm, y:sw.map(r=>r.Kd/1e9), color:"var(--c4)"},{name:"μ GPa", x:zsm, y:sw.map(r=>r.Gd/1e9), color:"var(--c3)"}], xlab:"depth (m)", height:210, zero:false, tint:false, vlines:vl, xfmt:v=>fx(v,0)});
+  lineChart("#d_vel", {series:[{name:"sand Vp", x:zsm, y:sw.map(r=>r.rock.Vp), color:"var(--c5)"},{name:"sand Vs", x:zsm, y:sw.map(r=>r.rock.Vs), color:"var(--c4)"},{name:"shale Vp", x:zsm, y:sw.map(r=>r.q.obVp), color:"var(--muted)", dash:"4,3"}], xlab:"depth (m)", height:210, zero:false, tint:false, vlines:vl, xfmt:v=>fx(v,0)});
+  lineChart("#d_gas", {series:[{name:"gas K MPa", x:zsm, y:sw.map(r=>r.gas.K/1e6), color:"var(--c2)"},{name:"gas ρ /2", x:zsm, y:sw.map(r=>r.gas.rho/2), color:"var(--c1)"}], xlab:"depth (m)", height:210, zero:false, tint:false, vlines:vl, xfmt:v=>fx(v,0)});
+  lineChart("#d_sens", {series:[{name:"fluid sensitivity %", x:zsm, y:sw.map(r=>r.fsens), color:"var(--c3)"},{name:"stress scale ×10", x:zsm, y:sw.map(r=>r.sens*10), color:"var(--c4)"}], xlab:"depth (m)", height:210, tint:false, vlines:vl, xfmt:v=>fx(v,0)});
+  lineChart("#d_base", {series:[{name:"R0 ×100", x:zsm, y:sw.map(r=>r.R0*100), color:"var(--c6)"},{name:"G ×100", x:zsm, y:sw.map(r=>r.G0*100), color:"var(--c2)", dash:"4,3"}], hlines:[{y:2, label:"class 1"},{y:-2, label:"class 3"}], xlab:"depth (m)", height:210, tint:false, vlines:vl, xfmt:v=>fx(v,0)});
+  // one section panel per depth, shared clip
+  const secs = all.map(r => timeSection(r.o, 0, "net", "diff"));
+  let m = 1e-12; secs.forEach(s => s.traces.forEach(t => { for (const v of t) if (Math.abs(v) > m) m = Math.abs(v); }));
+  const clip = p.clipMode === "shared" ? p.clip*1e-3 : m/p.gain;
+  const host = $("#d_secs");
+  all.forEach((r,i) => { const d = document.createElement("div"); d.innerHTML = `<div class="small" style="font-weight:600;margin-bottom:4px">${r.ref?`Field Beta (${fx(r.zm,0)} m)`:r.label}</div><div id="d_sec${i}"></div>`; host.appendChild(d); });
+  all.forEach((r,i) => {
+    drawSection("#d_sec"+i, Object.assign({}, secs[i], {mode:"diff", xname:"year", xfmt:v=>fx(v,0), vlines:secLines(r.o), height:180, clip})); });
 }
 
 /* ================= B5: NTG ================= */
@@ -2094,7 +2359,7 @@ function runTests(o){
   add("Zero noise gives σ = 0; RMS-difference bias matches √(S² + σ²)", nm0.st.every(s=>s.sigma===0) && Math.abs(Math.sqrt(s2/nn)/Math.sqrt(S*S+sg*sg) - 1) < 0.03,
     `σ with zero NRMS: ${nm0.st.map(s=>s.sigma).join(", ")}; simulated RMS ${fx(Math.sqrt(s2/nn),3)} vs theory ${fx(Math.sqrt(S*S+sg*sg),3)}`);
   // 6
-  const qz = Object.assign({}, p, {Cm:0, frameMode:"none", wOn:false, dPtot:0, spOn:false}); const oz = ENG.run(qz, {lite:true, spk:true}); const tz = AN.timeShift(qz, oz, {dz:20});
+  const qz = Object.assign({}, p, {Cm:0, frameMode:"none", wOn:false, dPtot:0, spOn:false, decl:"exp"}); const oz = ENG.run(qz, {lite:true, spk:true}); const tz = AN.timeShift(qz, oz, {dz:20});
   const maxz = Math.max(...tz.prof.map(pr=>Math.max(...Array.from(pr.dt).map(Math.abs))));
   const qv = Object.assign({}, p, {Cm:0, spOn:false, wOn:false}); const ov = ENG.run(qv, {lite:true, spk:true}); const tv = AN.timeShift(qv, ov, {dz:20, years:[ov.im]});
   const dVp = ov.rocks[ov.im].net.Vp/ov.rocks[ov.ib].net.Vp - 1;
@@ -2109,6 +2374,17 @@ function runTests(o){
   const dz = AN.depthOne(p, o, p.depth);
   add("Depth tab at the Field Beta depth reproduces the core model", p.anchor ? Math.abs(dz.rock.Vp - p.Vp0) < 1 && Math.abs((dz.k ? dz.k.ai.mn : 99) - k.ai.mn) < 0.03 : true,
     `${p.anchor?"":"(anchor off — not expected to match) "}Vp ${fx(dz.rock.Vp,1)} vs ${p.Vp0}; peak softening ${fx(dz.k?dz.k.ai.mn:NaN,3)} vs ${fx(k.ai.mn,3)} %`);
+  // 8b depth scenarios
+  { const qs = Object.assign({}, p, {zScen:"2000 5000", bgMode:"fixed"}); let sc = null, err = "";
+    try { sc = AN.depthScenarios(qs, o); } catch(e){ err = e.message; }
+    const okRun = sc && sc.rows.length === 3 && sc.rows.every(r => r.o && r.k);
+    add("Depth scenarios run without error", !!okRun, okRun ? sc.rows.map(r => (r.ref?"Field Beta":r.label) + " soft " + fx(r.k.ai.mn,2) + " %").join("; ") : "error: " + (err || "a scenario did not run"));
+    if (okRun){
+      const a = sc.rows[1], b = sc.rows[2];
+      add("Fluid sensitivity at 5000 m is smaller than at 2000 m", b.fsens < a.fsens, `2000 m ${fx(a.fsens,2)} %, 5000 m ${fx(b.fsens,2)} %`);
+      const same = sc.rows.every(r => r.q.obVp === p.obVp && r.q.obVs === p.obVs && r.q.obRho === p.obRho);
+      add("Fixed background: shale identical across depth scenarios", same, sc.rows.map(r => fx(r.q.obVp,0)+"/"+fx(r.q.obVs,0)+"/"+fx(r.q.obRho,0)).join(" · "));
+    } }
   // 9
   const inb = k.ai.R >= p.rshLo && k.ai.R <= p.rshHi;
   add("R_SH (ΔAI) inside the field band", inb, `R_SH ΔAI ${fx(k.ai.R)}, full-stack ${fx(k.stP[0].R)} (band ${p.rshLo}–${p.rshHi}). ${inb?"":"See Core model › Calibrate and the explanation there."}`);
@@ -2129,9 +2405,15 @@ function runTests(o){
 function tabAssump(o){
   const p = o.p;
   const T = cached("tests", () => runTests(o));
-  let h = `<section class="card"><div class="chead"><div><h3>Verification tests</h3><p class="cap">Run live on the current inputs. ${T.filter(t=>t.pass).length} of ${T.length} pass.</p></div><div class="tools"><button id="a_tcsv">Copy results</button></div></div>
+  const wrows = Object.keys(WELLS.Da.v).concat(Object.keys(WELLS.DaL.v)).filter((k,i,a) => SCHEMA_BY[k] && a.indexOf(k)===i);
+  const cell = (w,k) => { const e = WELLS[w].v[k] || (w!=="Da" ? WELLS.Da.v[k] : null); if (e && k === "pTable") return `<td title="${esc(e[2])}">table <span class="badge ${WELLS[w].v[k]?e[1]:"A"}">${WELLS[w].v[k]?e[1]:"="}</span></td>`; if (!e) return "<td>—</td>"; const own = !!WELLS[w].v[k]; return `<td title="${esc(e[2])}">${esc(e[0])} <span class="badge ${own?e[1]:"A"}">${own?e[1]:"="}</span></td>`; };
+  let h = `<section class="card"><div class="chead"><div><h3>Well data from the final well reports</h3><p class="cap">Values loaded by the well selector in the toolbar. M = reported in the FWR, A = derived or analog, S = assumed, “=” = taken from Da. Hover a value for its source. Sources: ${esc(WELL_SOURCES)}.</p></div><div class="tools"><button id="a_wcsv">Copy CSV</button></div></div>
+    <div class="tbl" style="max-height:480px"><table><tr><th class="l">Parameter</th><th>Unit</th><th>Da Upper</th><th>Da Lower</th><th>Db</th><th>Dc</th><th>Average</th><th class="l">Source (Da)</th></tr>
+    ${wrows.map(k=>`<tr><td class="l">${esc(SCHEMA_BY[k].label)}</td><td>${esc(SCHEMA_BY[k].unit)}</td>${["Da","DaL","Db","Dc","Avg"].map(w=>cell(w,k)).join("")}<td class="l small">${esc(WELLS.Da.v[k][2])}</td></tr>`).join("")}</table></div>
+    <div class="how"><b>Key real observations:</b> Da MDT virgin gas pressure 4671 psia at −2809 m TVDSS, gas gradient 0.104 psi/ft, water gradient 0.51 psi/ft, free-water level −2862 m TVDSS; gas SG 0.656, CGR 19–29 bbl/MMscf, condensate 0.78 g/cc; Dc GeoTap 4364 psia at −2740 m (≈300 psi below the Da regime), gas gradient 0.125 psi/ft, Lower S40 water-wet. <br><b>Production (dynamic reviews):</b> Da first gas 26 Aug 2014 at 75 MMscfd; Lower S40 water breakthrough Oct 2017, watered out Sep 2021; Upper S40 SIP 1650 psia (Apr 2020) recovering to 2680 (Oct 2021); shut in Apr 2023 by cross-flow; cum 112 Bcf (60 UZ + 52 LZ). Db first gas 11 Oct 2019, 4540 → 3440 psia by Oct 2022, 60.2 Bcf by Feb 2024. Dc first gas 8 Apr 2020, 4420 → 1730 psia by Sep 2022, 40.5 Bcf by Feb 2024, edge-aquifer movement from PTA. Sonic velocities were logged (Da DSI) but are not in any report text, so Vp₀ and Vs₀ are estimates to replace.</div></section>`;
+  h += `<section class="card"><div class="chead"><div><h3>Verification tests</h3><p class="cap">Run live on the current inputs. ${T.filter(t=>t.pass).length} of ${T.length} pass.</p></div><div class="tools"><button id="a_tcsv">Copy results</button></div></div>
     <div class="tbl"><table><tr><th class="l">Test</th><th>Result</th><th class="l">Numbers</th></tr>${T.map(t=>`<tr><td class="l">${esc(t.name)}</td><td>${t.pass?'<span class="pill ok">pass</span>':'<span class="pill warn">check</span>'}</td><td class="l small">${esc(t.detail)}</td></tr>`).join("")}</table></div></section>`;
-  h += `<section class="card"><div class="chead"><div><h3>Assumptions</h3><p class="cap">Every input. M = measured, A = analog, S = assumed. Highlighted rows differ from the Field Beta default. Field Beta defaults are analog priors, not field measurements.</p></div><div class="tools"><button id="a_csv">Copy CSV</button></div></div>
+  h += `<section class="card"><div class="chead"><div><h3>Assumptions</h3><p class="cap">Every input. M = measured, A = analog, S = assumed. Highlighted rows differ from the Well Da default. Values marked M come from the final well reports; A and S are derived or assumed.</p></div><div class="tools"><button id="a_csv">Copy CSV</button></div></div>
     <div class="tbl" style="max-height:520px"><table><tr><th class="l">Group</th><th class="l">Parameter</th><th>Current</th><th>Unit</th><th>Field Beta default</th><th>Range (low–high)</th><th>Conf.</th><th class="l">Basis</th></tr>
     ${SCHEMA.map(s=>{ const g = GROUPS.find(x=>x[0]===s.g)[1], ch = p[s.id] !== s.sap, v = s.type==="txt" ? "(table)" : p[s.id];
       return `<tr style="${ch?"background:color-mix(in srgb, var(--accent) 9%, transparent)":""}"><td class="l">${esc(g)}</td><td class="l">${esc(s.label)}</td><td>${esc(v)}</td><td>${esc(s.unit)}</td><td>${s.type==="txt"?"(table)":esc(s.sap)}</td><td>${s.lo!=null?`${s.lo} – ${s.hi}`:"—"}</td><td><span class="badge ${s.conf}">${s.conf}</span></td><td class="l small">${esc(s.basis||"")}</td></tr>`; }).join("")}</table></div></section>`;
@@ -2144,6 +2426,7 @@ function tabAssump(o){
     <li>v2: shared engine for all tabs; Field Beta analog defaults; 12 defects of the original fixed (see audit); Batzle–Wang brine; exact Zoeppritz; Ormsby/pasted wavelets with phase and scaler; NTG layering and Backus; compaction, disc-kernel overburden strain, Hatchell–Bourne time shifts with a shallow producer; noise and detectability; depth trends with friable-sand frame and Q; scenario library and A–D crossplot; tornado, spider, Monte Carlo and grid sensitivity; R_SH KPI and calibration.</li>
     ${STATE.changelog.map(c=>`<li>${esc(c)}</li>`).join("")}</ul></section>`;
   $("#main").innerHTML = h;
+  $("#a_wcsv").onclick = () => copyText(toCSV([["parameter","unit","Da Upper","Da Lower","Db","Dc","Average","source"]].concat(wrows.map(k=>[SCHEMA_BY[k].label, SCHEMA_BY[k].unit].concat(["Da","DaL","Db","Dc","Avg"].map(w=>((WELLS[w].v[k]||WELLS.Da.v[k]||[""])[0]))).concat([WELLS.Da.v[k][2]])))), "Well data (CSV)");
   $("#a_csv").onclick = () => copyText(toCSV([["group","parameter","current","unit","field_beta_default","low","high","confidence","basis"]].concat(SCHEMA.map(s=>[s.g, s.label, s.type==="txt"?"(table)":p[s.id], s.unit, s.type==="txt"?"(table)":s.sap, s.lo, s.hi, s.conf, s.basis]))), "Assumptions (CSV)");
   $("#a_tcsv").onclick = () => copyText(T.map(t=>`${t.pass?"PASS":"CHECK"}\t${t.name}\t${t.detail}`).join("\n"), "Verification results");
 }
@@ -2164,7 +2447,7 @@ function initHeader(){
   $("#tabs").innerHTML = TABS.map(([id,l]) => `<a href="#${id}" data-tab="${id}">${l}</a>`).join("");
   $("#tabs").addEventListener("click", e => { const a = e.target.closest("a[data-tab]"); if (!a) return; e.preventDefault(); setTab(a.dataset.tab); try { if (location.hash.slice(1) !== a.dataset.tab) history.replaceState(null, "", "#"+a.dataset.tab); } catch(err){ /* sandboxed frame: keep the tab in page state only */ } });
   window.addEventListener("hashchange", () => setTab(location.hash.slice(1)));
-  $("#preSap").onclick = () => applyParams(defaults("sap"));
+  $("#preSap").onclick = () => { applyParams(wellDefaults($("#wellSel").value)); STATE.changelog.push("loaded well data: " + WELLS[$("#wellSel").value].label); };
   $("#scenSave").onclick = () => { const n = ($("#scenName").value || "").trim() || ("Scenario " + new Date().toISOString().slice(0,16)); const s = scenStore(); s[n] = Object.assign({}, STATE.p); scenSave(s); refreshScenList(); $("#scenName").value = ""; STATE.changelog.push(`saved scenario “${n}”`); };
   $("#scenList").onchange = e => { const s = scenStore()[e.target.value]; if (s) applyParams(s); };
   $("#scenDup").onclick = () => { const k = $("#scenList").value; if (!k) return; const s = scenStore(); s[k + " (copy)"] = Object.assign({}, s[k]); scenSave(s); refreshScenList(); };
