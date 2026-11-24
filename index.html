@@ -491,7 +491,8 @@ function wellDefaults(name){
 }
 // make Well Da the default ("Field Beta") values and attach the real-data basis
 Object.keys(WELLS.Da.v).forEach(k => { const s = SCHEMA_BY[k]; if (!s) return; const [v,c,b] = WELLS.Da.v[k]; s.sap = v; s.conf = c; s.basis = b;
-  if (s.lo!=null && typeof v === "number" && (v < s.lo || v > s.hi)){ const r = Math.max(Math.abs(v)*0.08, 1e-6); s.lo = +(v - r).toFixed(4); s.hi = +(v + r).toFixed(4); } });
+  if (s.lo!=null && typeof v === "number" && s.unit === "yr"){ s.lo = +(v - 1).toFixed(2); s.hi = +(v + 1).toFixed(2); }   // calendar years: ±1 year, not ±8 %
+  else if (s.lo!=null && typeof v === "number" && (v < s.lo || v > s.hi)){ const r = Math.max(Math.abs(v)*0.08, 1e-6); s.lo = +(v - r).toFixed(4); s.hi = +(v + r).toFixed(4); } });
 if (false) module.exports = {SCHEMA, GROUPS, defaults, WELLS, wellDefaults};
 
 /* ===== Field Beta 4D engine: one calculation chain shared by every tab =====
